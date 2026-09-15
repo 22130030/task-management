@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import api from "../api/axios";
 import "../styles/dashboard.css";
 
+
 function Profile() {
   const navigate = useNavigate();
+
+  // =========================
+  // USER
+  // =========================
 
   const [user, setUser] = useState(null);
 
@@ -12,6 +18,11 @@ function Profile() {
   const [email, setEmail] = useState("");
 
   const [editing, setEditing] = useState(false);
+
+
+  // =========================
+  // PASSWORD
+  // =========================
 
   const [currentPassword, setCurrentPassword] =
     useState("");
@@ -22,33 +33,43 @@ function Profile() {
   const [confirmPassword, setConfirmPassword] =
     useState("");
 
+
+  // =========================
+  // MESSAGE
+  // =========================
+
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const getConfig = () => ({
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem(
-        "access_token"
-      )}`,
-    },
-  });
 
+  // =========================
+  // GET CURRENT USER
+  // =========================
 
   const fetchUser = async () => {
     try {
-      const response = await api.get(
-        "/users/me",
-        getConfig()
-      );
+      const response = await api.get("/users/me");
 
       setUser(response.data);
-      setUsername(response.data.username);
-      setEmail(response.data.email);
+
+      setUsername(
+        response.data.username
+      );
+
+      setEmail(
+        response.data.email
+      );
 
     } catch (error) {
-      console.error(error);
+      console.error(
+        "Lỗi lấy thông tin user:",
+        error
+      );
 
-      navigate("/login");
+      setError(
+        error.response?.data?.detail ||
+        "Không thể tải thông tin tài khoản"
+      );
     }
   };
 
@@ -57,6 +78,10 @@ function Profile() {
     fetchUser();
   }, []);
 
+
+  // =========================
+  // UPDATE PROFILE
+  // =========================
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -70,11 +95,18 @@ function Profile() {
         {
           username,
           email,
-        },
-        getConfig()
+        }
       );
 
       setUser(response.data);
+
+      setUsername(
+        response.data.username
+      );
+
+      setEmail(
+        response.data.email
+      );
 
       setEditing(false);
 
@@ -83,13 +115,22 @@ function Profile() {
       );
 
     } catch (error) {
+      console.error(
+        "Lỗi cập nhật profile:",
+        error
+      );
+
       setError(
         error.response?.data?.detail ||
-          "Cập nhật thất bại"
+        "Cập nhật thất bại"
       );
     }
   };
 
+
+  // =========================
+  // CHANGE PASSWORD
+  // =========================
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -97,7 +138,33 @@ function Profile() {
     setMessage("");
     setError("");
 
-    if (newPassword !== confirmPassword) {
+
+    if (
+      !currentPassword ||
+      !newPassword ||
+      !confirmPassword
+    ) {
+      setError(
+        "Vui lòng nhập đầy đủ thông tin mật khẩu"
+      );
+
+      return;
+    }
+
+
+    if (newPassword.length < 6) {
+      setError(
+        "Mật khẩu mới phải có ít nhất 6 ký tự"
+      );
+
+      return;
+    }
+
+
+    if (
+      newPassword !==
+      confirmPassword
+    ) {
       setError(
         "Mật khẩu xác nhận không khớp"
       );
@@ -105,43 +172,91 @@ function Profile() {
       return;
     }
 
+
     try {
       await api.put(
         "/users/me/password",
         {
-          current_password: currentPassword,
-          new_password: newPassword,
-        },
-        getConfig()
+          current_password:
+            currentPassword,
+
+          new_password:
+            newPassword,
+        }
       );
+
 
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+
 
       setMessage(
         "Đổi mật khẩu thành công"
       );
 
     } catch (error) {
+      console.error(
+        "Lỗi đổi mật khẩu:",
+        error
+      );
+
       setError(
         error.response?.data?.detail ||
-          "Đổi mật khẩu thất bại"
+        "Đổi mật khẩu thất bại"
       );
     }
   };
 
 
+  // =========================
+  // CANCEL EDIT
+  // =========================
+
+  const handleCancelEdit = () => {
+    if (!user) {
+      return;
+    }
+
+    setUsername(
+      user.username
+    );
+
+    setEmail(
+      user.email
+    );
+
+    setEditing(false);
+
+    setError("");
+  };
+
+
+  // =========================
+  // LOGOUT
+  // =========================
+
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+    localStorage.removeItem(
+      "access_token"
+    );
+
+    localStorage.removeItem(
+      "refresh_token"
+    );
 
     navigate("/login");
   };
 
 
+  // =========================
+  // UI
+  // =========================
+
   return (
     <div className="dashboard-page">
+
+      {/* SIDEBAR */}
 
       <aside className="sidebar">
 
@@ -150,6 +265,7 @@ function Profile() {
           <div className="logo">
             ✦ TaskFlow
           </div>
+
 
           <nav>
 
@@ -162,6 +278,7 @@ function Profile() {
               🏠 Tổng quan
             </button>
 
+
             <button
               className="menu-item"
               onClick={() =>
@@ -171,8 +288,12 @@ function Profile() {
               ✅ Công việc
             </button>
 
+
             <button
               className="menu-item active"
+              onClick={() =>
+                navigate("/profile")
+              }
             >
               👤 Hồ sơ
             </button>
@@ -192,10 +313,17 @@ function Profile() {
       </aside>
 
 
+      {/* MAIN */}
+
       <main className="dashboard-main">
 
+        {/* HEADER */}
+
         <header
-          className="dashboard-header profile-header"
+          className="
+            dashboard-header
+            profile-header
+          "
         >
 
           <div>
@@ -209,7 +337,8 @@ function Profile() {
             </h1>
 
             <p className="header-subtitle">
-              Quản lý thông tin tài khoản của bạn
+              Quản lý thông tin tài khoản
+              của bạn
             </p>
 
           </div>
@@ -217,21 +346,46 @@ function Profile() {
         </header>
 
 
+        {/* SUCCESS MESSAGE */}
+
         {message && (
-          <div className="profile-message success">
+
+          <div
+            className="
+              profile-message
+              success
+            "
+          >
             ✅ {message}
           </div>
+
         )}
 
+
+        {/* ERROR MESSAGE */}
 
         {error && (
-          <div className="profile-message error">
+
+          <div
+            className="
+              profile-message
+              error
+            "
+          >
             ⚠️ {error}
           </div>
+
         )}
 
 
-        <section className="task-form-card profile-card">
+        {/* PROFILE CARD */}
+
+        <section
+          className="
+            task-form-card
+            profile-card
+          "
+        >
 
           <div className="profile-avatar-section">
 
@@ -240,7 +394,8 @@ function Profile() {
             </div>
 
             <h2>
-              {user?.username}
+              {user?.username ||
+                "Người dùng"}
             </h2>
 
             <p>
@@ -251,9 +406,13 @@ function Profile() {
 
 
           <form
-            onSubmit={handleUpdateProfile}
             className="task-form"
+            onSubmit={
+              handleUpdateProfile
+            }
           >
+
+            {/* USERNAME */}
 
             <div className="form-group">
 
@@ -262,15 +421,21 @@ function Profile() {
               </label>
 
               <input
+                type="text"
                 value={username}
                 disabled={!editing}
+                required
                 onChange={(e) =>
-                  setUsername(e.target.value)
+                  setUsername(
+                    e.target.value
+                  )
                 }
               />
 
             </div>
 
+
+            {/* EMAIL */}
 
             <div className="form-group">
 
@@ -282,22 +447,29 @@ function Profile() {
                 type="email"
                 value={email}
                 disabled={!editing}
+                required
                 onChange={(e) =>
-                  setEmail(e.target.value)
+                  setEmail(
+                    e.target.value
+                  )
                 }
               />
 
             </div>
 
 
+            {/* BUTTONS */}
+
             {!editing ? (
 
               <button
                 type="button"
                 className="save-button"
-                onClick={() =>
-                  setEditing(true)
-                }
+                onClick={() => {
+                  setEditing(true);
+                  setMessage("");
+                  setError("");
+                }}
               >
                 ✏️ Chỉnh sửa hồ sơ
               </button>
@@ -317,18 +489,9 @@ function Profile() {
                 <button
                   type="button"
                   className="cancel-button"
-                  onClick={() => {
-
-                    setUsername(
-                      user.username
-                    );
-
-                    setEmail(
-                      user.email
-                    );
-
-                    setEditing(false);
-                  }}
+                  onClick={
+                    handleCancelEdit
+                  }
                 >
                   Hủy
                 </button>
@@ -342,21 +505,34 @@ function Profile() {
         </section>
 
 
-        <section className="task-form-card profile-card password-card">
+        {/* PASSWORD CARD */}
+
+        <section
+          className="
+            task-form-card
+            profile-card
+            password-card
+          "
+        >
 
           <h2>
             🔐 Đổi mật khẩu
           </h2>
 
           <p className="password-description">
-            Đảm bảo tài khoản của bạn luôn an toàn
+            Đảm bảo tài khoản của bạn
+            luôn an toàn
           </p>
 
 
           <form
-            onSubmit={handleChangePassword}
             className="task-form"
+            onSubmit={
+              handleChangePassword
+            }
           >
+
+            {/* CURRENT PASSWORD */}
 
             <div className="form-group">
 
@@ -367,16 +543,19 @@ function Profile() {
               <input
                 type="password"
                 value={currentPassword}
+                placeholder="Nhập mật khẩu hiện tại"
+                required
                 onChange={(e) =>
                   setCurrentPassword(
                     e.target.value
                   )
                 }
-                required
               />
 
             </div>
 
+
+            {/* NEW PASSWORD */}
 
             <div className="form-group">
 
@@ -387,16 +566,19 @@ function Profile() {
               <input
                 type="password"
                 value={newPassword}
+                placeholder="Nhập mật khẩu mới"
+                required
                 onChange={(e) =>
                   setNewPassword(
                     e.target.value
                   )
                 }
-                required
               />
 
             </div>
 
+
+            {/* CONFIRM PASSWORD */}
 
             <div className="form-group">
 
@@ -407,20 +589,23 @@ function Profile() {
               <input
                 type="password"
                 value={confirmPassword}
+                placeholder="Nhập lại mật khẩu mới"
+                required
                 onChange={(e) =>
                   setConfirmPassword(
                     e.target.value
                   )
                 }
-                required
               />
 
             </div>
 
 
             <button
-              className="change-password-button"
               type="submit"
+              className="
+                change-password-button
+              "
             >
               🔐 Đổi mật khẩu
             </button>
@@ -434,5 +619,6 @@ function Profile() {
     </div>
   );
 }
+
 
 export default Profile;
