@@ -17,6 +17,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173"
+        "https://taskflow-api-3b5f.onrender.com"
     ],
     allow_credentials=True,
     allow_methods=["*"],
