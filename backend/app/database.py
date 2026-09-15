@@ -1,9 +1,34 @@
+import os
+
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
+from sqlalchemy.engine import URL
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-DATABASE_URL = "mysql+pymysql://root:@127.0.0.1:3307/task_management"
 
-engine = create_engine(DATABASE_URL)
+load_dotenv()
+
+
+DATABASE_URL = URL.create(
+    drivername="mysql+pymysql",
+    username=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    host=os.getenv("DB_HOST"),
+    port=int(os.getenv("DB_PORT")),
+    database=os.getenv("DB_NAME"),
+)
+
+
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,
+    connect_args={
+        "ssl": {
+            "ca": os.getenv("DB_SSL_CA")
+        }
+    }
+)
+
 
 SessionLocal = sessionmaker(
     autocommit=False,
@@ -11,12 +36,15 @@ SessionLocal = sessionmaker(
     bind=engine
 )
 
+
 Base = declarative_base()
+
 
 def get_db():
     db = SessionLocal()
 
     try:
         yield db
+
     finally:
         db.close()
